@@ -73,7 +73,7 @@ func getEnumCases(_ enumDecl: EnumDeclaration) -> [EnumCase] {
     return cases
 }
 
-func generateEnumCodableConformance(_ enumDecl: EnumDeclaration) -> String {
+func generateCodableConformance(_ enumDecl: EnumDeclaration) -> String {
     let cases = getEnumCases(enumDecl)
     
     var codingKeys = ""
@@ -167,10 +167,11 @@ extension \(enumDecl.name.textDescription): Codable {
 }
 
 
-func generateEnumHashableConformance(_ enumDecl: EnumDeclaration) -> String {
+func generateHashableConformance(_ enumDecl: EnumDeclaration) -> String {
     let cases = getEnumCases(enumDecl)
     
     var hash = ""
+    var stableHash = ""
     var equality = ""
     
     for enumCase in cases {
@@ -180,10 +181,12 @@ func generateEnumHashableConformance(_ enumDecl: EnumDeclaration) -> String {
         
         if !hash.isEmpty {
             hash += "\n        "
+            stableHash += "\n        "
             equality += "\n        "
         }
         
         hash += "\(enumCase.switchCase)\n            "
+        stableHash += "\(enumCase.switchCase)\n            "
         
         equality += "\(enumCase.switchCase)\n            "
         equality += "guard case .\(enumCase.name)(\(enumCase.valueLabelsWithLetUnderscored)) = rhs else { return false }\n            "
@@ -192,10 +195,12 @@ func generateEnumHashableConformance(_ enumDecl: EnumDeclaration) -> String {
         for value in values {
             if i != 0 {
                 hash += "\n            "
+                stableHash += "\n            "
                 equality += "\n            "
             }
             
             hash += "hasher.combine(\(value.label))"
+            stableHash += "combineHashes(&hashValue, \(value.label).stableHash)"
             equality += "guard \(value.label) == \(value.label)_ else { return false } "
             
             i += 1
@@ -203,7 +208,7 @@ func generateEnumHashableConformance(_ enumDecl: EnumDeclaration) -> String {
     }
     
     return """
-extension \(enumDecl.name.textDescription): Hashable {
+extension \(enumDecl.name.textDescription): Hashable, StableHashable {
     static func ==(lhs: \(enumDecl.name), rhs: \(enumDecl.name)) -> Bool {
         guard lhs.codingKey == rhs.codingKey else {
             return false
@@ -225,6 +230,19 @@ extension \(enumDecl.name.textDescription): Hashable {
         default:
             break
         }
+    }
+
+    var stableHash: Int {
+        var hashValue = 0
+        combineHashes(&hashValue, self.codingKey.rawValue.stableHash)
+        
+        switch self {
+        \(stableHash)
+        default:
+            break
+        }
+        
+        return hashValue
     }
 }
 """

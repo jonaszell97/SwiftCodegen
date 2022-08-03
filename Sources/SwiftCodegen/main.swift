@@ -14,7 +14,11 @@ let topLevelDecl = try parser.parse()
 
 for statement in topLevelDecl.statements {
     if let enumDecl = statement as? EnumDeclaration {
-        print(generateEnumCodableConformance(enumDecl))
-        print(generateEnumHashableConformance(enumDecl))
+        print(generateCodableConformance(enumDecl))
+        print(generateHashableConformance(enumDecl))
+    }
+    else if let structDecl = statement as? StructDeclaration {
+        print(generateCodableConformance(structDecl))
+        print(generateHashableConformance(structDecl))
     }
 }
