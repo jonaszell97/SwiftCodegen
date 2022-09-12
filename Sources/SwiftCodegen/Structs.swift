@@ -91,22 +91,36 @@ extension \(structDecl.name.textDescription): Codable {
 """
 }
 
-func generateHashableConformance(_ structDecl: StructDeclaration) -> String {
+func generateHashableConformance(_ structDecl: StructDeclaration,
+                                 generateEquatable: Bool, generateHashable: Bool,
+                                 generateStableHashable: Bool) -> String {
     let fields = getStructFields(structDecl)
+    var equatable = "", hashable = "", stableHashable = ""
     
-    return """
-extension \(structDecl.name.textDescription): Hashable {
+    if generateEquatable || generateHashable || generateStableHashable {
+        equatable = """
+extension \(structDecl.name.textDescription): Equatable {
     static func ==(lhs: Self, rhs: Self) -> Bool {
         return (
             \(fields.map { "lhs.\($0.name) == rhs.\($0.name)" }.joined(separator: "\n            && ") )
         )
     }
-
+}
+"""
+    }
+    
+    if generateHashable {
+        hashable = """
+extension \(structDecl.name.textDescription): Hashable {
     func hash(into hasher: inout Hasher) {
         \(fields.map { "hasher.combine(\($0.name))" }.joined(separator: "\n        "))
     }
 }
-
+"""
+    }
+    
+    if generateStableHashable {
+        stableHashable = """
 extension \(structDecl.name.textDescription): StableHashable {
     var stableHash: Int {
         var hashValue = 0
@@ -115,5 +129,12 @@ extension \(structDecl.name.textDescription): StableHashable {
         return hashValue
     }
 }
+"""
+    }
+    
+    return """
+\(equatable)
+\(hashable)
+\(stableHashable)
 """
 }

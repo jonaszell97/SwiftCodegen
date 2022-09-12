@@ -167,7 +167,9 @@ extension \(enumDecl.name.textDescription): Codable {
 }
 
 
-func generateHashableConformance(_ enumDecl: EnumDeclaration) -> String {
+func generateHashableConformance(_ enumDecl: EnumDeclaration,
+                                 generateEquatable: Bool, generateHashable: Bool,
+                                 generateStableHashable: Bool) -> String {
     let cases = getEnumCases(enumDecl)
     
     var hash = ""
@@ -207,8 +209,10 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration) -> String {
         }
     }
     
-    return """
-extension \(enumDecl.name.textDescription): Hashable, StableHashable {
+    var equatable = "", hashable = "", stableHashable = ""
+    if generateEquatable || generateHashable || generateStableHashable {
+        equatable = """
+extension \(enumDecl.name): Equatable {
     static func ==(lhs: \(enumDecl.name), rhs: \(enumDecl.name)) -> Bool {
         guard lhs.codingKey == rhs.codingKey else {
             return false
@@ -222,7 +226,13 @@ extension \(enumDecl.name.textDescription): Hashable, StableHashable {
 
         return true
     }
-
+}
+"""
+    }
+    
+    if generateHashable {
+        hashable = """
+extension \(enumDecl.name): Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(self.codingKey.rawValue)
         switch self {
@@ -231,7 +241,13 @@ extension \(enumDecl.name.textDescription): Hashable, StableHashable {
             break
         }
     }
-
+}
+"""
+    }
+    
+    if generateStableHashable {
+        stableHashable = """
+extension \(enumDecl.name): StableHashable {
     var stableHash: Int {
         var hashValue = 0
         combineHashes(&hashValue, self.codingKey.rawValue.stableHash)
@@ -245,5 +261,12 @@ extension \(enumDecl.name.textDescription): Hashable, StableHashable {
         return hashValue
     }
 }
+"""
+    }
+    
+    return """
+\(equatable)
+\(hashable)
+\(stableHashable)
 """
 }
