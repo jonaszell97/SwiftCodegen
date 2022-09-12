@@ -119,3 +119,72 @@ extension MyEnum: Hashable {
     }
 }
 ```
+
+#
+
+## Pastebot Integration
+
+SwiftCodegen is especially useful when integrated with a clipboard manager like Pastebot, since you can just copy your code and paste the generated conformances automatically.
+
+Pastebot can only execute scripts located in `/usr/bin` or `/bin`, but this restriction can be circumvented by running a local server that forwards commands to `SwiftCodegen`, which can then be reached using `curl` from your Pastebot filter.
+
+A simple node server might look like this:
+
+```javascript
+const express = require('express')
+const app = express()
+const port = 8082
+const bodyParser = require('body-parser');
+const { exec } = require("child_process");
+const tmp = require('tmp');
+const fs = require('fs');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post('/swift-codegen', (req, res) => {
+    const text = req.body['text'];
+
+    tmp.file(function (err, path, fd, cleanupCallback) {
+        if (err) {
+            console.log(`error: ${error}`);
+            res.send(error);
+            return;
+        }
+
+        fs.writeFileSync(path, text);
+
+        exec(`/usr/local/bin/SwiftCodegen ${path} --hashable --codable`,
+            (error, stdout, stderr) => {
+            if (error) {
+                console.log(`error: ${error.message}`);
+                res.send(error.message);
+                return;
+            }
+            if (stderr) {
+                console.log(`stderr: ${stderr}`);
+                res.send(stderr);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            res.send(stdout);
+        });
+    });    
+})
+
+app.listen(port, () => {
+  console.log(`Pastebot Server listening on port ${port}`)
+})
+```
+
+And the Pastebot filter communicating with the server:
+
+```bash
+# get the text from stdin
+input=$(cat -)
+
+# send request
+curl -X POST --data-urlencode "text=${input}" localhost:8082/swift-codegen
+```
+
+Optionally, launchd can be configured to start this server automatically on startup.
