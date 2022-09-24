@@ -55,6 +55,10 @@ struct SwiftCodegen: ParsableCommand {
                 }
                 
                 if emitEquatableConformance || emitHashableConformance || emitStableHashableConformance {
+                    if (emitCodableConformance) {
+                        print("")
+                    }
+                    
                     print(generateHashableConformance(enumDecl, generateEquatable: emitEquatableConformance,
                                                       generateHashable: emitHashableConformance,
                                                       generateStableHashable: emitStableHashableConformance))
@@ -66,6 +70,10 @@ struct SwiftCodegen: ParsableCommand {
                 }
                 
                 if emitEquatableConformance || emitHashableConformance || emitStableHashableConformance {
+                    if (emitCodableConformance) {
+                        print("")
+                    }
+                    
                     print(generateHashableConformance(structDecl, generateEquatable: emitEquatableConformance,
                                                       generateHashable: emitHashableConformance,
                                                       generateStableHashable: emitStableHashableConformance))

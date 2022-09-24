@@ -239,6 +239,7 @@ extension \(enumDecl.name): Equatable {
     
     if generateHashable {
         hashable = """
+
 extension \(enumDecl.name): Hashable {
     \(publicString)func hash(into hasher: inout Hasher) {
         hasher.combine(self.codingKey.rawValue)
@@ -253,6 +254,7 @@ extension \(enumDecl.name): Hashable {
     
     if generateStableHashable {
         stableHashable = """
+
 extension \(enumDecl.name): StableHashable {
     \(publicString)var stableHash: Int {
         var hashValue = 0

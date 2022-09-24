@@ -115,6 +115,7 @@ extension \(structDecl.name.textDescription): Equatable {
     
     if generateHashable {
         hashable = """
+
 extension \(structDecl.name.textDescription): Hashable {
     \(publicString)func hash(into hasher: inout Hasher) {
         \(fields.map { "hasher.combine(\($0.name))" }.joined(separator: "\n        "))
@@ -125,6 +126,7 @@ extension \(structDecl.name.textDescription): Hashable {
     
     if generateStableHashable {
         stableHashable = """
+
 extension \(structDecl.name.textDescription): StableHashable {
     \(publicString)var stableHash: Int {
         var hashValue = 0
