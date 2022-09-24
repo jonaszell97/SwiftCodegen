@@ -69,6 +69,8 @@ func getStructFields(_ structDecl: StructDeclaration) -> [StructField] {
 
 func generateCodableConformance(_ structDecl: StructDeclaration) -> String {
     let fields = getStructFields(structDecl)
+    let addPublic = structDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
     
     return """
 extension \(structDecl.name.textDescription): Codable {
@@ -76,12 +78,12 @@ extension \(structDecl.name.textDescription): Codable {
         case \(fields.map { $0.name }.joined(separator: ", "))
     }
     
-    func encode(to encoder: Encoder) throws {
+    \(publicString)func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         \(fields.map { "try container.encode(\($0.name), forKey: .\($0.name))" }.joined(separator: "\n        "))
     }
     
-    init(from decoder: Decoder) throws {
+    \(publicString)init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
             \(fields.map { "\($0.name): try container.decode(\($0.type).self, forKey: .\($0.name))" }.joined(separator: ",\n            "))
@@ -96,11 +98,13 @@ func generateHashableConformance(_ structDecl: StructDeclaration,
                                  generateStableHashable: Bool) -> String {
     let fields = getStructFields(structDecl)
     var equatable = "", hashable = "", stableHashable = ""
+    let addPublic = structDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
     
     if generateEquatable || generateHashable || generateStableHashable {
         equatable = """
 extension \(structDecl.name.textDescription): Equatable {
-    static func ==(lhs: Self, rhs: Self) -> Bool {
+    \(publicString)static func ==(lhs: Self, rhs: Self) -> Bool {
         return (
             \(fields.map { "lhs.\($0.name) == rhs.\($0.name)" }.joined(separator: "\n            && ") )
         )
@@ -112,7 +116,7 @@ extension \(structDecl.name.textDescription): Equatable {
     if generateHashable {
         hashable = """
 extension \(structDecl.name.textDescription): Hashable {
-    func hash(into hasher: inout Hasher) {
+    \(publicString)func hash(into hasher: inout Hasher) {
         \(fields.map { "hasher.combine(\($0.name))" }.joined(separator: "\n        "))
     }
 }
@@ -122,7 +126,7 @@ extension \(structDecl.name.textDescription): Hashable {
     if generateStableHashable {
         stableHashable = """
 extension \(structDecl.name.textDescription): StableHashable {
-    var stableHash: Int {
+    \(publicString)var stableHash: Int {
         var hashValue = 0
         \(fields.map { "combineHashes(&hashValue, \($0.name).stableHash)" }.joined(separator: "\n        "))
 

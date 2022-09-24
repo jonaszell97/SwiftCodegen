@@ -75,6 +75,8 @@ func getEnumCases(_ enumDecl: EnumDeclaration) -> [EnumCase] {
 
 func generateCodableConformance(_ enumDecl: EnumDeclaration) -> String {
     let cases = getEnumCases(enumDecl)
+    let addPublic = enumDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
     
     var codingKeys = ""
     for enumCase in cases {
@@ -142,14 +144,14 @@ extension \(enumDecl.name.textDescription): Codable {
         }
     }
     
-    func encode(to encoder: Encoder) throws {
+    \(publicString)func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
         \(encoding)
         }
     }
     
-    init(from decoder: Decoder) throws {
+    \(publicString)init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch container.allKeys.first {
         \(decoding)
@@ -171,13 +173,17 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration,
                                  generateEquatable: Bool, generateHashable: Bool,
                                  generateStableHashable: Bool) -> String {
     let cases = getEnumCases(enumDecl)
+    let addPublic = enumDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
     
     var hash = ""
     var stableHash = ""
     var equality = ""
+    var exhaustive = true
     
     for enumCase in cases {
         guard let values = enumCase.values, !values.isEmpty else {
+            exhaustive = false
             continue
         }
         
@@ -209,19 +215,20 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration,
         }
     }
     
+    let defaultString = exhaustive ? "" : "default: break"
+    
     var equatable = "", hashable = "", stableHashable = ""
     if generateEquatable || generateHashable || generateStableHashable {
         equatable = """
 extension \(enumDecl.name): Equatable {
-    static func ==(lhs: \(enumDecl.name), rhs: \(enumDecl.name)) -> Bool {
+    \(publicString)static func ==(lhs: \(enumDecl.name), rhs: \(enumDecl.name)) -> Bool {
         guard lhs.codingKey == rhs.codingKey else {
             return false
         }
 
         switch lhs {
         \(equality)
-        default:
-            break
+        \(defaultString)
         }
 
         return true
@@ -233,12 +240,11 @@ extension \(enumDecl.name): Equatable {
     if generateHashable {
         hashable = """
 extension \(enumDecl.name): Hashable {
-    func hash(into hasher: inout Hasher) {
+    \(publicString)func hash(into hasher: inout Hasher) {
         hasher.combine(self.codingKey.rawValue)
         switch self {
         \(hash)
-        default:
-            break
+        \(defaultString)
         }
     }
 }
@@ -248,14 +254,13 @@ extension \(enumDecl.name): Hashable {
     if generateStableHashable {
         stableHashable = """
 extension \(enumDecl.name): StableHashable {
-    var stableHash: Int {
+    \(publicString)var stableHash: Int {
         var hashValue = 0
         combineHashes(&hashValue, self.codingKey.rawValue.stableHash)
         
         switch self {
         \(stableHash)
-        default:
-            break
+        \(defaultString)
         }
         
         return hashValue
