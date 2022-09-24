@@ -180,12 +180,15 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration,
     var stableHash = ""
     var equality = ""
     var exhaustive = true
+    var hasCasesWithValues = false
     
     for enumCase in cases {
         guard let values = enumCase.values, !values.isEmpty else {
             exhaustive = false
             continue
         }
+        
+        hasCasesWithValues = true
         
         if !hash.isEmpty {
             hash += "\n        "
@@ -216,7 +219,15 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration,
     }
     
     let defaultString = exhaustive ? "" : "default: break"
-    
+    let switchString: (String) -> String = { str in
+        return hasCasesWithValues ? """
+        switch lhs {
+        \(str)
+        \(defaultString)
+        }
+""" : ""
+    }
+
     var equatable = "", hashable = "", stableHashable = ""
     if generateEquatable || generateHashable || generateStableHashable {
         equatable = """
@@ -226,10 +237,7 @@ extension \(enumDecl.name): Equatable {
             return false
         }
 
-        switch lhs {
-        \(equality)
-        \(defaultString)
-        }
+\(switchString(equality))
 
         return true
     }
@@ -243,10 +251,7 @@ extension \(enumDecl.name): Equatable {
 extension \(enumDecl.name): Hashable {
     \(publicString)func hash(into hasher: inout Hasher) {
         hasher.combine(self.codingKey.rawValue)
-        switch self {
-        \(hash)
-        \(defaultString)
-        }
+\(switchString(hash))
     }
 }
 """
@@ -259,11 +264,7 @@ extension \(enumDecl.name): StableHashable {
     \(publicString)var stableHash: Int {
         var hashValue = 0
         combineHashes(&hashValue, self.codingKey.rawValue.stableHash)
-        
-        switch self {
-        \(stableHash)
-        \(defaultString)
-        }
+\(switchString(stableHash))
         
         return hashValue
     }
