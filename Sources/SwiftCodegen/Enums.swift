@@ -219,9 +219,9 @@ func generateHashableConformance(_ enumDecl: EnumDeclaration,
     }
     
     let defaultString = exhaustive ? "" : "default: break"
-    let switchString: (String) -> String = { str in
+    let switchString: (String, String) -> String = { str, value in
         return hasCasesWithValues ? """
-        switch lhs {
+        switch \(value) {
         \(str)
         \(defaultString)
         }
@@ -237,7 +237,7 @@ extension \(enumDecl.name): Equatable {
             return false
         }
 
-\(switchString(equality))
+\(switchString(equality, "lhs"))
 
         return true
     }
@@ -251,7 +251,7 @@ extension \(enumDecl.name): Equatable {
 extension \(enumDecl.name): Hashable {
     \(publicString)func hash(into hasher: inout Hasher) {
         hasher.combine(self.codingKey.rawValue)
-\(switchString(hash))
+\(switchString(hash, "self"))
     }
 }
 """
@@ -264,7 +264,7 @@ extension \(enumDecl.name): StableHashable {
     \(publicString)var stableHash: Int {
         var hashValue = 0
         combineHashes(&hashValue, self.codingKey.rawValue.stableHash)
-\(switchString(stableHash))
+\(switchString(stableHash, "self"))
         
         return hashValue
     }

@@ -24,6 +24,9 @@ struct SwiftCodegen: ParsableCommand {
     /// Whether to emit an Equatable conformance.
     @Flag(name: .customLong("equatable")) var emitEquatableConformance: Bool = false
     
+    /// Whether to emit a memberwise initializer.
+    @Flag(name: .customLong("memberwiseInitializer")) var emitMemberwiseInitializer: Bool = false
+    
     mutating func run() throws {
         let sourceFile: SourceFile
         if parseDirectly {
@@ -77,6 +80,10 @@ struct SwiftCodegen: ParsableCommand {
                     print(generateHashableConformance(structDecl, generateEquatable: emitEquatableConformance,
                                                       generateHashable: emitHashableConformance,
                                                       generateStableHashable: emitStableHashableConformance))
+                }
+                
+                if emitMemberwiseInitializer {
+                    print(generateMemberwiseInitializer(structDecl))
                 }
             }
         }

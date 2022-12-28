@@ -84,6 +84,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--memberwiseInitializer"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--codable"
             isEnabled = "YES">
          </CommandLineArgument>

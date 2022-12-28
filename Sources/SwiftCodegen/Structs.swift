@@ -13,6 +13,9 @@ struct StructField {
     
     /// The field type.
     let type: String
+    
+    /// The optional initializer expression.
+    var initializerExpression: String?
 }
 
 func getStructFields(_ structDecl: StructDeclaration) -> [StructField] {
@@ -60,12 +63,24 @@ func getStructFields(_ structDecl: StructDeclaration) -> [StructField] {
             type = "<unknown>"
         }
         
-        fields.append(.init(name: identifier.identifier.textDescription, type: type))
+        fields.append(.init(name: identifier.identifier.textDescription, type: type,
+                           initializerExpression: initializers.first?.initializerExpression?.textDescription))
     }
     
     return fields
 }
 
+func generateMemberwiseInitializer(_ structDecl: StructDeclaration) -> String {
+    let fields = getStructFields(structDecl)
+    let addPublic = structDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
+    
+    return """
+\(publicString)init(\(fields.map { "\($0.name): \($0.type)\($0.initializerExpression != nil ? " = \($0.initializerExpression!)" : "")" }.joined(separator: ",\n            "))) {
+    \(fields.map { "self.\($0.name) = \($0.name)" }.joined(separator: "\n    "))
+}
+"""
+}
 
 func generateCodableConformance(_ structDecl: StructDeclaration) -> String {
     let fields = getStructFields(structDecl)
