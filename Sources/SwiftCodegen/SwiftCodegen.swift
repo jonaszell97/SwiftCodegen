@@ -86,6 +86,25 @@ struct SwiftCodegen: ParsableCommand {
                     print(generateMemberwiseInitializer(structDecl))
                 }
             }
+            else if let classDecl = statement as? ClassDeclaration {
+                if emitCodableConformance {
+                    print(generateCodableConformance(classDecl))
+                }
+                
+                if emitEquatableConformance || emitHashableConformance || emitStableHashableConformance {
+                    if (emitCodableConformance) {
+                        print("")
+                    }
+                    
+                    print(generateHashableConformance(classDecl, generateEquatable: emitEquatableConformance,
+                                                      generateHashable: emitHashableConformance,
+                                                      generateStableHashable: emitStableHashableConformance))
+                }
+                
+                if emitMemberwiseInitializer {
+                    print(generateMemberwiseInitializer(classDecl))
+                }
+            }
         }
     }
 }

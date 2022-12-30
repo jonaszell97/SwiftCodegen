@@ -1,7 +1,7 @@
 
 import AST
 
-struct StructField {
+struct ClassField {
     /// The field name.
     let name: String
     
@@ -12,9 +12,9 @@ struct StructField {
     var initializerExpression: String?
 }
 
-func getStructFields(_ structDecl: StructDeclaration) -> [StructField] {
-    var fields = [StructField]()
-    for memberDecl in structDecl.members {
+func getClassFields(_ classDecl: ClassDeclaration) -> [ClassField] {
+    var fields = [ClassField]()
+    for memberDecl in classDecl.members {
         guard case .declaration(let decl) = memberDecl else {
             continue
         }
@@ -58,15 +58,15 @@ func getStructFields(_ structDecl: StructDeclaration) -> [StructField] {
         }
         
         fields.append(.init(name: identifier.identifier.textDescription, type: type,
-                           initializerExpression: initializers.first?.initializerExpression?.textDescription))
+                            initializerExpression: initializers.first?.initializerExpression?.textDescription))
     }
     
     return fields
 }
 
-func generateMemberwiseInitializer(_ structDecl: StructDeclaration) -> String {
-    let fields = getStructFields(structDecl)
-    let addPublic = structDecl.accessLevelModifier == .public
+func generateMemberwiseInitializer(_ classDecl: ClassDeclaration) -> String {
+    let fields = getClassFields(classDecl)
+    let addPublic = classDecl.accessLevelModifier == .public
     let publicString = addPublic ? "public " : ""
     
     return """
@@ -77,13 +77,13 @@ func generateMemberwiseInitializer(_ structDecl: StructDeclaration) -> String {
 """
 }
 
-func generateCodableConformance(_ structDecl: StructDeclaration) -> String {
-    let fields = getStructFields(structDecl)
-    let addPublic = structDecl.accessLevelModifier == .public
+func generateCodableConformance(_ classDecl: ClassDeclaration) -> String {
+    let fields = getClassFields(classDecl)
+    let addPublic = classDecl.accessLevelModifier == .public
     let publicString = addPublic ? "public " : ""
     
     return """
-extension \(structDecl.name.textDescription): Codable {
+extension \(classDecl.name.textDescription): Codable {
     enum CodingKeys: String, CodingKey {
         case \(fields.map { $0.name }.joined(separator: ", "))
     }
@@ -103,17 +103,17 @@ extension \(structDecl.name.textDescription): Codable {
 """
 }
 
-func generateHashableConformance(_ structDecl: StructDeclaration,
+func generateHashableConformance(_ classDecl: ClassDeclaration,
                                  generateEquatable: Bool, generateHashable: Bool,
                                  generateStableHashable: Bool) -> String {
-    let fields = getStructFields(structDecl)
+    let fields = getClassFields(classDecl)
     var equatable = "", hashable = "", stableHashable = ""
-    let addPublic = structDecl.accessLevelModifier == .public
+    let addPublic = classDecl.accessLevelModifier == .public
     let publicString = addPublic ? "public " : ""
     
     if generateEquatable || generateHashable || generateStableHashable {
         equatable = """
-extension \(structDecl.name.textDescription): Equatable {
+extension \(classDecl.name.textDescription): Equatable {
     \(publicString)static func ==(lhs: Self, rhs: Self) -> Bool {
         return (
             \(fields.map { "lhs.\($0.name) == rhs.\($0.name)" }.joined(separator: "\n            && ") )
@@ -126,7 +126,7 @@ extension \(structDecl.name.textDescription): Equatable {
     if generateHashable {
         hashable = """
 
-extension \(structDecl.name.textDescription): Hashable {
+extension \(classDecl.name.textDescription): Hashable {
     \(publicString)func hash(into hasher: inout Hasher) {
         \(fields.map { "hasher.combine(\($0.name))" }.joined(separator: "\n        "))
     }
@@ -137,7 +137,7 @@ extension \(structDecl.name.textDescription): Hashable {
     if generateStableHashable {
         stableHashable = """
 
-extension \(structDecl.name.textDescription): StableHashable {
+extension \(classDecl.name.textDescription): StableHashable {
     \(publicString)var stableHash: Int {
         var hashValue = 0
         \(fields.map { "combineHashes(&hashValue, \($0.name).stableHash)" }.joined(separator: "\n        "))
