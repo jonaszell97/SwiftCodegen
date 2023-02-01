@@ -5,7 +5,7 @@ This tool can be used for automatic code generation in Swift projects. Currently
 - **Hashable** conformance for Enums and Structs
 - **Equatable** conformance for Enums and Structs
 - **Codable** conformance for Enums and Structs
-
+- **Memberwise initializers** for Structs and Classes
 
 ## Usage
 
@@ -15,6 +15,7 @@ SwiftCodegen can be used via the command line with the following options:
 - `--codable`: If present, a Codable conformance is generated for your struct or enum
 - `--equatable`: If present, an Equatable conformance is generated for your struct or enum
 - `--hashable`: If present, both an Equatable and a Hashable conformance are generated for your struct or enum
+- `--memberwiseInitializer`: If present, a memberwise initializer for a struct or class is generated
 
 ## Example
 
@@ -122,9 +123,9 @@ extension MyEnum: Hashable {
 
 #
 
-## Pastebot Integration
+## Pastebot Integration (macOS)
 
-SwiftCodegen is especially useful when integrated with a clipboard manager like Pastebot, since you can just copy your code and paste the generated conformances automatically.
+SwiftCodegen is especially useful when integrated with a clipboard manager like Pastebot, which allows you to copy your code and paste the generated conformances directly.
 
 Pastebot can only execute scripts located in `/usr/bin` or `/bin`, but this restriction can be circumvented by running a local server that forwards commands to `SwiftCodegen`, which can then be reached using `curl` from your Pastebot filter.
 
