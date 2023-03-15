@@ -81,6 +81,8 @@ func generateCodableConformance(_ enumDecl: EnumDeclaration) -> String {
         codingKeys += enumCase.name
     }
     
+    var otherCodingKeys = ""
+    
     var encoding = ""
     for enumCase in cases {
         if !encoding.isEmpty {
@@ -89,12 +91,23 @@ func generateCodableConformance(_ enumDecl: EnumDeclaration) -> String {
         
         encoding += "\(enumCase.switchCase)\n            "
         
-        if let values = enumCase.values {
+        if let values = enumCase.values, !values.isEmpty {
             if values.count == 1 {
                 encoding += "try container.encode(\(values[0].label), forKey: .\(enumCase.name))"
             }
             else {
-                encoding += "try container.encodeValues(\(enumCase.valueLabels), for: .\(enumCase.name))"
+                otherCodingKeys += """
+enum \(enumCase.name)CodingKeys: CodingKey {
+    case \((0..<values.count).map { "_\($0)" }.joined(separator: ", "))
+}\n
+"""
+                
+                encoding += """
+var nestedContainer = container.nestedContainer(keyedBy: \(enumCase.name)CodingKeys.self, forKey: .\(enumCase.name))
+"""
+                for i in 0..<values.count {
+                    encoding += "\ntry nestedContainer.encode(\(values[i].label), forKey: ._\(i))"
+                }
             }
         }
         else {
@@ -116,8 +129,15 @@ func generateCodableConformance(_ enumDecl: EnumDeclaration) -> String {
                 decoding += "self = .\(enumCase.name)(\(values[0].label): \(values[0].label))"
             }
             else {
-                decoding += "let (\(enumCase.valueLabels)): (\(enumCase.types)) = try container.decodeValues(for: .\(enumCase.name))\n            "
-                decoding += "self = .\(enumCase.name)(\(enumCase.valueLabelsWithColon))"
+                decoding += "let nestedContainer = try container.nestedContainer(keyedBy: \(enumCase.name)CodingKeys.self, forKey: .\(enumCase.name))"
+                
+                decoding += """
+\nlet (\(enumCase.valueLabels)): (\(enumCase.types)) = (
+    \((0..<values.count).map { "try nestedContainer.decode(\(values[$0].type).self, forKey: ._\($0))" }.joined(separator: ",\n"))
+)
+"""
+                
+                decoding += "\nself = .\(enumCase.name)(\(enumCase.valueLabelsWithColon))"
             }
         }
         else {
@@ -131,6 +151,8 @@ extension \(enumDecl.name.textDescription): Codable {
     enum CodingKeys: String, CodingKey {
         case \(codingKeys)
     }
+
+    \(otherCodingKeys)
 
     var codingKey: CodingKeys {
         switch self {
