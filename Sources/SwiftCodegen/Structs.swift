@@ -77,6 +77,23 @@ func generateMemberwiseInitializer(_ structDecl: StructDeclaration) -> String {
 """
 }
 
+func generateDescription(_ structDecl: StructDeclaration) -> String {
+    let fields = getStructFields(structDecl)
+    let addPublic = structDecl.accessLevelModifier == .public
+    let publicString = addPublic ? "public " : ""
+    
+    return """
+/// Textual description of this value.
+\(publicString)var description: String {
+    return \"\"\"
+\(structDecl.name.textDescription) {
+    \(fields.map { "\($0.name) = \"\\(self.\($0.name))\"" }.joined(separator: "\n    "))
+}
+\"\"\"
+}
+"""
+}
+
 func generateCodableConformance(_ structDecl: StructDeclaration) -> String {
     let fields = getStructFields(structDecl)
     let addPublic = structDecl.accessLevelModifier == .public

@@ -80,6 +80,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--description"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--hashable"
             isEnabled = "YES">
          </CommandLineArgument>

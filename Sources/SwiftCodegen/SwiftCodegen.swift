@@ -27,6 +27,9 @@ struct SwiftCodegen: ParsableCommand {
     /// Whether to emit a memberwise initializer.
     @Flag(name: .customLong("memberwiseInitializer")) var emitMemberwiseInitializer: Bool = false
     
+    /// Whether to emit a memberwise initializer.
+    @Flag(name: .customLong("description")) var emitDescription: Bool = false
+    
     mutating func run() throws {
         let sourceFile: SourceFile
         if parseDirectly {
@@ -70,6 +73,10 @@ struct SwiftCodegen: ParsableCommand {
             else if let structDecl = statement as? StructDeclaration {
                 if emitCodableConformance {
                     print(generateCodableConformance(structDecl))
+                }
+                
+                if emitDescription {
+                    print(generateDescription(structDecl))
                 }
                 
                 if emitEquatableConformance || emitHashableConformance || emitStableHashableConformance {
